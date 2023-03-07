@@ -1,0 +1,81 @@
+---
+title: "PC and HC algorithms for causal discovery"
+output: html_notebook
+---
+
+Date: 6/3/22
+```{r}
+library(ggplot2) #library for plotting
+library(pcalg) #library for the PC algorithm
+library(bnlearn) #library for the HC algorithm
+library(ggplot2) #library for plotting
+library(readr) #library for reading input
+library(tidyr) #for function pivot_longer
+
+
+
+```
+
+The dataset
+
+```{r}
+df = data.frame(read_csv("a1_data.csv"))
+df
+```
+
+We plot the data to observe the distributions 
+
+
+```{r}
+ggplot(pivot_longer(df, everything()), aes(value)) +
+geom_histogram(bins = 100) +
+facet_wrap(~name, nrow = 3)
+
+```
+
+
+```{r}
+n <- nrow(df) #sample size
+V <- colnames(df) #label names
+suffStat <- list(C= cor(df), n=n) #calculate the Pearson correlation among the variables. The sufficient statistic consists of the correlation matrix and the sample size
+```
+
+```{r}
+suffStat[1] #view the correlation matrix
+```
+
+
+```{r}
+pc.fit <- pc(suffStat = suffStat,
+             indepTest = gaussCItest, #independence test: partial correlations
+             alpha = 0.15, #significance level (number in (0,1) for the individual conditional independence tests
+             labels = V,
+             verbose = FALSE)
+```
+
+```{r}
+plot(pc.fit,main = "PC")
+
+```
+
+
+
+```{r}
+hc.fit <- hc (data.frame (df),
+                          debug = FALSE)
+```
+
+
+```{r}
+graphviz.plot(hc.fit,
+    main = " HC")
+```
+
+
+
+
+
+
+
+
+
