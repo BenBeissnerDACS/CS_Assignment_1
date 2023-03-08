@@ -1,0 +1,316 @@
+---
+title: "Assignment_1_Beissner"
+author: "Ben Ole Beissner"
+date: "2023-03-03"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+# Load necessary libraries and data
+library(readr)
+library(ggplot2)
+library(tidyr)
+library(MASS)
+library(tibble)
+library(dagitty)
+library(ggdag)
+a1_data <- data.frame(read_csv("~/Computational Statistics/Assignment 1/a1_data.csv"))
+#a1_data
+```
+```{r}
+# Histogram plot of variables
+ggplot(pivot_longer(a1_data, everything()), aes(value)) +
+  geom_histogram(bins = 100) +
+  facet_wrap(~name, nrow = 3)
+```
+```{r}
+# Mean of each variable
+colMeans(a1_data)
+```
+```{r}
+# Variance of each variable
+sapply(a1_data, var)
+```
+
+
+# C) Implementation in Python
+A Pearson’s correlation test is ran to calculate the partial correlation between all variables, in case of no correlation
+the third DAG is printed. Here we assume that only partial correlations with a value greater than 0.15 or in the negative case less than -0.15 are significantly correlated. Note that with a lower treshold, more linear relationships between variables are taken into account which leads to different DAGs.
+
+
+```{r}
+# Computing partial correlation between all variables
+#install.packages("ppcor")
+library(ppcor)
+partial_corr = pcor(a1_data)
+pcor_est = data.frame(partial_corr$estimate)
+
+
+# filter for pairs of variables with significant partial correlation (> 0.15) - comment out to see all partial correlations between variables
+filter_df <- function(pcor_est) {
+  # Define the condition to filter by
+  condition <- pcor_est > 0.15
+  
+  # Apply the condition to the entire dataframe
+  filtered_df <- pcor_est * condition
+  # Return the filtered dataframe
+  print(filtered_df)
+  return(filtered_df)
+}
+filter_df(pcor_est)
+```
+```{r}
+# filter for pairs of variables with significant partial correlation (> 0.15) 
+
+filter_df <- function(pcor_est) {
+  # Define the condition to filter by
+  condition <- pcor_est < -0.15
+  
+  # Apply the condition to the entire dataframe
+  filtered_df <- pcor_est * condition
+  # Return the filtered dataframe
+  print(filtered_df)
+  return(filtered_df)
+}
+filter_df(pcor_est)
+```
+
+
+Because of our assumption of normal distributed variables we can use a´the F-test to test the variances. We use the null hypothesis that the ration between Var(x) and Var(Y) is 1, alternative it is less than 1. According to which variance is bigger, we print the DAG. We do this for all partial correlated pairs of variables seperately and afterwards conclude the bivariate relationships into one DAG:
+
+```{r}
+# F-test for all variables with significant correlation to determine the direction of the arrow
+#A and B
+res.ftest <- var.test(a1_data$A, a1_data$B, data=a1_data, alternative = "less")
+res.ftest
+```
+
+```{r}
+# Print bivariate DAG according to F-test
+if (res.ftest$estimate< 1){
+  dag <- dagitty("dag{B <- A}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}else {
+  dag <- dagitty("dag{A <- B}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}
+ggdag(tidy_ggdag) +
+  theme_dag()
+```
+
+```{r}
+#F and G
+res.ftest <- var.test(a1_data$F, a1_data$G, data=a1_data, alternative = "less")
+res.ftest
+```
+```{r}
+#DAG F and G
+if (res.ftest$estimate< 1){
+  dag <- dagitty("dag{G <- F}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}else {
+  dag <- dagitty("dag{F <- G}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}
+ggdag(tidy_ggdag) +
+  theme_dag()
+```
+
+```{r}
+#I and J
+res.ftest <- var.test(a1_data$I, a1_data$J, data=a1_data, alternative = "less")
+res.ftest
+```
+```{r}
+#DAG I and J
+if (res.ftest$estimate< 1){
+  dag <- dagitty("dag{J <- I}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}else {
+  dag <- dagitty("dag{I <- J}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}
+ggdag(tidy_ggdag) +
+  theme_dag()
+```
+
+```{r}
+#D and E
+res.ftest <- var.test(a1_data$D, a1_data$E, data=a1_data, alternative = "less")
+res.ftest
+```
+```{r}
+if (res.ftest$estimate< 1){
+  dag <- dagitty("dag{E <- D}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}else {
+  dag <- dagitty("dag{D <- E}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}
+ggdag(tidy_ggdag) +
+  theme_dag()
+```
+
+```{r}
+#F and H
+res.ftest <- var.test(a1_data$F, a1_data$H, data=a1_data, alternative = "less")
+res.ftest
+```
+```{r}
+if (res.ftest$estimate< 1){
+  dag <- dagitty("dag{H <- F}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}else {
+  dag <- dagitty("dag{F <- H}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}
+ggdag(tidy_ggdag) +
+  theme_dag()
+```
+
+```{r}
+#F and J
+res.ftest <- var.test(a1_data$F, a1_data$J, data=a1_data, alternative = "less")
+res.ftest
+```
+```{r}
+if (res.ftest$estimate< 1){
+  dag <- dagitty("dag{J <- F}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}else {
+  dag <- dagitty("dag{F <- J}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}
+ggdag(tidy_ggdag) +
+  theme_dag()
+```
+
+```{r}
+#G and H
+res.ftest <- var.test(a1_data$G, a1_data$H, data=a1_data, alternative = "less")
+res.ftest
+```
+```{r}
+if (res.ftest$estimate< 1){
+  dag <- dagitty("dag{H <- G}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}else {
+  dag <- dagitty("dag{G <- H}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}
+ggdag(tidy_ggdag) +
+  theme_dag()
+```
+
+```{r}
+#I and K
+res.ftest <- var.test(a1_data$I, a1_data$K, data=a1_data, alternative = "less")
+res.ftest
+```
+```{r}
+if (res.ftest$estimate< 1){
+  dag <- dagitty("dag{K <- I}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}else {
+  dag <- dagitty("dag{I <- K}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}
+ggdag(tidy_ggdag) +
+  theme_dag()
+```
+
+```{r}
+#J and B
+res.ftest <- var.test(a1_data$J, a1_data$B, data=a1_data, alternative = "less")
+res.ftest
+```
+```{r}
+if (res.ftest$estimate< 1){
+  dag <- dagitty("dag{B <- J}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}else {
+  dag <- dagitty("dag{J <- B}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}
+ggdag(tidy_ggdag) +
+  theme_dag()
+```
+```{r}
+#I and H
+res.ftest <- var.test(a1_data$I, a1_data$H, data=a1_data, alternative = "less")
+res.ftest
+```
+```{r}
+if (res.ftest$estimate< 1){
+  dag <- dagitty("dag{H <- I}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}else {
+  dag <- dagitty("dag{I <- H}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}
+ggdag(tidy_ggdag) +
+  theme_dag()
+```
+
+```{r}
+#J and A
+res.ftest <- var.test(a1_data$J, a1_data$A, data=a1_data, alternative = "less")
+res.ftest
+```
+```{r}
+if (res.ftest$estimate< 1){
+  dag <- dagitty("dag{A <- J}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}else {
+  dag <- dagitty("dag{J <- A}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}
+ggdag(tidy_ggdag) +
+  theme_dag()
+```
+
+```{r}
+#J and H
+res.ftest <- var.test(a1_data$J, a1_data$H, data=a1_data, alternative = "less")
+res.ftest
+```
+```{r}
+if (res.ftest$estimate< 1){
+  dag <- dagitty("dag{H <- J}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}else {
+  dag <- dagitty("dag{J <- H}")
+  tidy_ggdag<-tidy_dagitty(dag)
+}
+ggdag(tidy_ggdag) +
+  theme_dag()
+```
+
+```{r}
+# Print whole DAG with partial correlation
+g <- dagitty('dag{
+  A [pos="-2,2"]
+  B [pos="-3,1"]
+  C [pos="-2,1"]
+  D [pos="-2,0"]
+  E [pos="-3,-1"]
+  F [pos="2,0"]
+  G [pos="4,0"]
+  H [pos="0,-1"]
+  I [pos="2,3"]
+  J [pos="0,2"]
+  K [pos="2,1"]
+  
+  B -> A -> J
+  B -> J
+  E -> D
+  G -> F
+  H -> I -> J
+  H -> J
+  I -> K
+}')
+plot(g)
+```
